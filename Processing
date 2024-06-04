@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#define epsilon 40
+#define epsilon 9
 
 
 typedef struct point{
@@ -14,11 +14,6 @@ typedef struct point{
 char* load_png_file(const char *filename, int *width, int *height) {
     unsigned char *image = NULL;
     int error = lodepng_decode32_file(&image, width, height, filename);
-    if (error) {
-        printf("error %u: %s\n", error, lodepng_error_text(error));
-        return NULL;
-    }
-
     return (image);
 }
 
@@ -50,14 +45,15 @@ void floodFill(unsigned char* image, int x, int y, int newColor1, int newColor2,
     free(ar);
 }
 
-void ScharrFilter(unsigned char *image, int width, int height) {
+void Filter(unsigned char *image, int width, int height) {
     int x, y, dy, dx, i;
-    int gx[3][3] = {{3, 0, -3},
-                    {10, 0, -10},
-                    {3, 0, -3}};
-    int gy[3][3] = {{3,  10,  3},
-                    {0,  0,  0},
-                    {-3, -10, -3}};
+    int gx[3][3] = {{-1, 0, 1},
+                    {-2, 0, 2},
+                    {-1, 0, 1}};
+
+    int gy[3][3] = {{1, 2, 1},
+                    {0, 0, 0},
+                    {-1, -2, -1}};
     unsigned char *result = malloc(width * height * 4 * sizeof(unsigned char));
 
     for (y = 1; y < height - 1; y++) {
@@ -96,7 +92,7 @@ void colorComponents(unsigned char *image, int width, int height) {
     for (y = 1; y < height - 1; y++) {
         for (x = 1; x < width - 1; x++) {
             if (image[4 * (y * width + x)] < epsilon) {
-                floodFill(image, x, y, rand() % (255 - epsilon * 2) + epsilon * 2, \
+                floodFill(image, x, y, rand() % (200 - epsilon * 2) + epsilon * 2, \
                 rand() % (255 - epsilon * 2) + epsilon * 2, \
                 rand() % (255 - epsilon * 2) + epsilon * 2, epsilon, width, height);
 
@@ -108,14 +104,15 @@ void colorComponents(unsigned char *image, int width, int height) {
 }
 
 
+
 int main() {
     int width = 0, height = 0, x, y, dy, dx;
     char *filename = "skull.png";
     char *image = load_png_file(filename, &width, &height);
 
+    Filter(image, width, height);
     colorComponents(image, width, height);
-    ScharrFilter(image, width, height);
-
+    
     free(image);
     return 0;
 }
